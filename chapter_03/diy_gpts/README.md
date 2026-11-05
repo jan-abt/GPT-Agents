@@ -22,7 +22,7 @@ you. Here you write it, so you can see exactly what is sent to the model.
 | Chapter 3 exercise (in ChatGPT) | DIY version | Status |
 |---|---|---|
 | 1. Culinary Companion with custom rules | Stage 1: instructions + chat (`app.py`) | ✅ done |
-| 4. Knowledge assistant from uploaded files | Stage 2: Calculus Made Easy with retrieval | planned |
+| 4. Knowledge assistant from uploaded files | Stage 2: Calculus Made Easy with retrieval (`knowledge.py`) | ✅ done (keyword search) |
 | 3. Custom action with FastAPI + ngrok | Stage 3: function calling with `../daily_tasks_api.py` (local, no ngrok needed) | planned |
 | 2. Data analysis with the code interpreter | Stage 4: running generated code | optional |
 | 5. Publish to the GPT Store | not possible; the code is on GitHub instead | — |
@@ -42,9 +42,9 @@ chapter 7.
 ## Setup
 
 1. Create the project's virtual environment (see the main README) and install
-   Streamlit into it:
+   this folder's packages into it (Streamlit for the UI, pypdf to read PDFs):
    ```bash
-   .venv/bin/pip install streamlit
+   .venv/bin/pip install -r chapter_03/diy_gpts/requirements.txt
    ```
 2. Create `.env` from the template and pick a provider by uncommenting its
    block:
@@ -103,3 +103,34 @@ survives a Rerun, but not reloading the browser tab or restarting the server.
 
 Any file in `chapter_03/` named `*_v1.txt` shows up in the sidebar. Copy one,
 edit the instructions, and click Rerun.
+
+## Stage 2: knowledge (retrieval)
+
+A GPT gets knowledge when a PDF with the same name sits next to its
+instruction file: `calculus_made_easy_v1.txt` → `calculus_made_easy.pdf`.
+For those GPTs the sidebar's **Use knowledge** switch is on.
+
+Calculus Made Easy is about 80,000 tokens; Llama's context window is 8,192.
+So, like ChatGPT does behind the scenes, `knowledge.py` sends only the parts of
+the book that match each question:
+
+1. **Split** the book into overlapping chunks of 200 words (TODO 4).
+2. **Search**: score every chunk against the question and keep the best 3
+   (TODO 5).
+3. **Inject**: add them to the system message inside `<document>` tags, for
+   this turn only (TODO 6).
+
+The **Knowledge** panel above each answer shows the excerpts the model got.
+The extracted text is cached in `.cache/calculus_made_easy.txt` (gitignored).
+
+**Things to try:** switch **Use knowledge** off and ask the same question to
+compare. Without the book, Llama answers from memory and can be confidently
+wrong; with it, check whether the answer uses the excerpts.
+
+**Known limit of keyword search:** in a calculus book, `d` and `dx` appear on
+almost every page, so counting matching words favours formula-heavy pages over
+the passage that actually explains something. The book's definition of `d`
+("merely means 'a little bit of'") ranks only 47th for the question *"what
+does the little letter d in dx mean?"*. Weighting rare words higher (TF-IDF)
+helps a bit, but not enough. Searching by meaning instead of by words, with
+**embeddings**, is the next step (and the topic of chapter 8).

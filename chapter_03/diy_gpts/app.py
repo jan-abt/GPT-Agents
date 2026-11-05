@@ -1,9 +1,12 @@
 """
-DIY GPTs - stage 1: instructions + chat.
+DIY GPTs - a do-it-yourself version of chapter 3's custom GPTs, without
+ChatGPT Plus.
 
-A do-it-yourself version of chapter 3's custom GPTs, without ChatGPT Plus:
-pick one of the book's instruction files, and it becomes the system message
-for a chat with whatever LLM .env points at (LM Studio, Gemini or OpenAI).
+Stage 1, instructions + chat: pick one of the book's instruction files, and it
+becomes the system message for a chat with whatever LLM .env points at
+(LM Studio, Gemini or OpenAI).
+Stage 2, knowledge: a GPT with a PDF of the same name answers from the most
+relevant excerpts of that PDF (see knowledge.py).
 
 Run it from the repo root with:
     .venv/bin/streamlit run chapter_03/diy_gpts/app.py
@@ -15,7 +18,9 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-HERE = Path(__file__).parent
+import knowledge
+
+HERE = Path(__file__).resolve().parent
 INSTRUCTIONS_DIR = HERE.parent                  # chapter_03: the book's GPT instruction files
 
 load_dotenv(HERE / ".env")                       # diy_gpts/.env, same format as chapter_2/.env
@@ -23,15 +28,22 @@ client = OpenAI()
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
+# ---------------------------------------------------------------------------
+# TODO 1: return the text of the instruction file at `path`.
+# Hint: Path has a method that reads a whole file as a string.
+# ---------------------------------------------------------------------------
 def load_instructions(path: Path) -> str:
-    """Return the text of a GPT instruction file."""
     return path.read_text(encoding="utf-8")
 
-
+# ---------------------------------------------------------------------------
+# TODO 2: build the list of messages to send to the LLM.
+#   - system_prompt: the GPT's instructions (a string)
+#   - history: the conversation so far, a list like
+#       [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...]
+# Return a NEW list: the system message first, then the whole history.
+# (Same shape as the `messages` lists in chapter 2.)
+# ---------------------------------------------------------------------------
 def build_messages(system_prompt: str, history: list[dict]) -> list[dict]:
-    """The messages sent to the LLM: the GPT's instructions as the system
-    message, then the whole conversation so far. Returns a new list, so the
-    stored history never contains the system message."""
     return [{"role": "system", "content": system_prompt}] + history
 
 # ---------------------------------------------------------------------------
@@ -43,6 +55,14 @@ names = {f.stem.removesuffix("_v1").replace("_", " ").title(): f for f in gpt_fi
 with st.sidebar:
     st.header("DIY GPTs")
     choice = st.selectbox("Assistant", list(names))
+    knowledge_pdf = knowledge.knowledge_file_for(names[choice])
+    use_knowledge = st.toggle(
+        "Use knowledge",
+        value=knowledge_pdf is not None,
+        disabled=knowledge_pdf is None,
+        help=f"Answer from excerpts of {knowledge_pdf.name}" if knowledge_pdf
+             else "This GPT has no knowledge file (a PDF with the same name).",
+    )
     st.caption(f"Model: `{MODEL}`")
     if st.button("New chat"):
         st.session_state.history = []
@@ -72,13 +92,28 @@ if user_text := st.chat_input("Ask your assistant..."):
         st.markdown(user_text)
 
     with st.chat_message("assistant"):
+        # Knowledge: look up the excerpts that match this question and add them
+        # to the system message for this turn only (they aren't kept in history).
+        turn_prompt = system_prompt
+        if use_knowledge and knowledge_pdf:
+            chunks = knowledge.split_into_chunks(knowledge.load_text(knowledge_pdf))
+            found = knowledge.search(chunks, user_text)
+            turn_prompt = knowledge.add_knowledge(system_prompt, found)
+            with st.expander(f"Knowledge: {len(found)} excerpts from {knowledge_pdf.name}"):
+                for i, chunk in enumerate(found, 1):
+                    st.caption(f"Excerpt {i}")
+                    st.text(chunk)
+
         stream = client.chat.completions.create(
             model=MODEL,
-            messages=build_messages(system_prompt, st.session_state.history),
+            messages=build_messages(turn_prompt, st.session_state.history),
             stream=True,
         )
         reply = st.write_stream(stream)   # shows the reply as it arrives, returns the full text
 
-    # Remember the reply, so the next turn includes it. The API is stateless:
-    # without this the assistant would forget everything it said.
+    # -----------------------------------------------------------------------
+    # TODO 3: remember the assistant's reply, so the next turn includes it.
+    # Without this line the assistant "forgets" everything it said
+    # (remember the message-history lesson from chapter 2).
+    # -----------------------------------------------------------------------
     st.session_state.history.append({"role": "assistant", "content": reply})
