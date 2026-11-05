@@ -40,7 +40,7 @@ def main():
         return
     
     def print_available():
-        print("Available prompt tactics:")
+        print("\n---Available prompt tactics---")
         for i, filename in enumerate(text_files, start=1):
             print(f"{i}. {filename}")
 
