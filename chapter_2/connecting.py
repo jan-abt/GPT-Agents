@@ -12,17 +12,24 @@ client = OpenAI(api_key=api_key)
 
 
 # Example function to query ChatGPT
-def ask_chatgpt(user_message):
+def ask_chatgpt(user_messages):
     response = client.chat.completions.create(
-        model="gpt-4-1106-preview",  # gpt-4 turbo or a model of your preference
-        messages=[{"role": "system", "content": "You are a helpful assistant."},
-                  {"role": "user", "content": user_message}],
+        model=os.getenv("OPENAI_MODEL", "gemini-3.5-flash"),
+        messages=user_messages,
         temperature=0.7,
         )       
     return response.choices[0].message.content
 
 
-# Example usage
-user = "What is the capital of France?"
-response = ask_chatgpt(user)
+messages=[
+    {
+        "role": "system",
+        "content": "You are a helpful assistant."
+    },
+    {
+        "role": "user",
+        "content": "What is the capital of France?"
+    }
+]
+response = ask_chatgpt(messages)
 print(response)

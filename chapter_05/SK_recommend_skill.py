@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import asyncio
 
 import semantic_kernel as sk
@@ -20,7 +25,7 @@ if useAzureOpenAI:
 else:
     api_key, _ = sk.openai_settings_from_dot_env()
     oai_chat_service = OpenAIChatCompletion(
-        ai_model_id="gpt-4-1106-preview", api_key=api_key
+        ai_model_id=os.getenv("OPENAI_MODEL", "gpt-4-1106-preview"), api_key=api_key
     )
     kernel.add_chat_service("chat-gpt", oai_chat_service)
 
