@@ -1,15 +1,12 @@
 """
-My GPTs - stage 1: instructions + chat.
+DIY GPTs - stage 1: instructions + chat.
 
-A homemade version of chapter 3's custom GPTs: pick one of the book's
-instruction files, and it becomes the system message for a chat with
-whatever LLM .env points at (LM Studio, Gemini or OpenAI).
+A do-it-yourself version of chapter 3's custom GPTs, without ChatGPT Plus:
+pick one of the book's instruction files, and it becomes the system message
+for a chat with whatever LLM .env points at (LM Studio, Gemini or OpenAI).
 
 Run it from the repo root with:
-    .venv/bin/streamlit run my_gpts/app.py
-
-Three small TODOs are left for you to write; each one raises an error
-that tells you what to do until you replace it.
+    .venv/bin/streamlit run chapter_03/diy_gpts/app.py
 """
 import os
 from pathlib import Path
@@ -19,30 +16,23 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 HERE = Path(__file__).parent
-INSTRUCTIONS_DIR = HERE.parent / "chapter_03"   # the book's GPT instruction files
+INSTRUCTIONS_DIR = HERE.parent                  # chapter_03: the book's GPT instruction files
 
-load_dotenv(HERE / ".env")                       # my_gpts/.env, same format as chapter_2/.env
+load_dotenv(HERE / ".env")                       # diy_gpts/.env, same format as chapter_2/.env
 client = OpenAI()
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
-# ---------------------------------------------------------------------------
-# TODO 1: return the text of the instruction file at `path`.
-# Hint: Path has a method that reads a whole file as a string.
-# ---------------------------------------------------------------------------
 def load_instructions(path: Path) -> str:
+    """Return the text of a GPT instruction file."""
     return path.read_text(encoding="utf-8")
 
-# ---------------------------------------------------------------------------
-# TODO 2: build the list of messages to send to the LLM.
-#   - system_prompt: the GPT's instructions (a string)
-#   - history: the conversation so far, a list like
-#       [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...]
-# Return a NEW list: the system message first, then the whole history.
-# (Same shape as the `messages` lists in chapter 2.)
-# ---------------------------------------------------------------------------
+
 def build_messages(system_prompt: str, history: list[dict]) -> list[dict]:
-        return [{"role": "system", "content": system_prompt}] + history
+    """The messages sent to the LLM: the GPT's instructions as the system
+    message, then the whole conversation so far. Returns a new list, so the
+    stored history never contains the system message."""
+    return [{"role": "system", "content": system_prompt}] + history
 
 # ---------------------------------------------------------------------------
 # Sidebar: choose a GPT
@@ -51,7 +41,7 @@ gpt_files = sorted(INSTRUCTIONS_DIR.glob("*_v1.txt"))
 names = {f.stem.removesuffix("_v1").replace("_", " ").title(): f for f in gpt_files}
 
 with st.sidebar:
-    st.header("My GPTs")
+    st.header("DIY GPTs")
     choice = st.selectbox("Assistant", list(names))
     st.caption(f"Model: `{MODEL}`")
     if st.button("New chat"):
@@ -89,9 +79,6 @@ if user_text := st.chat_input("Ask your assistant..."):
         )
         reply = st.write_stream(stream)   # shows the reply as it arrives, returns the full text
 
-    # -----------------------------------------------------------------------
-    # TODO 3: remember the assistant's reply, so the next turn includes it.
-    # Without this line the assistant "forgets" everything it said
-    # (remember the message-history lesson from chapter 2).
-    # -----------------------------------------------------------------------
+    # Remember the reply, so the next turn includes it. The API is stateless:
+    # without this the assistant would forget everything it said.
     st.session_state.history.append({"role": "assistant", "content": reply})
