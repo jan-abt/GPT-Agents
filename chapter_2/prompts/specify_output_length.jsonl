@@ -11,7 +11,7 @@
 [
     {
         "role": "system",
-        "content": "Summarize all replies into 3 bullet points."
+        "content": "Reply ONLY with exactly 3 bullet points, each starting with '- '. No intro sentence."
     },
     {
         "role": "user",
