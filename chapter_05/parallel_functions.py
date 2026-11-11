@@ -1,3 +1,4 @@
+import os
 from openai import OpenAI
 import json
 from dotenv import load_dotenv
@@ -5,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI()
+MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo-1106")  # set in .env
 
 
 def recommend(topic, rating="good"):
@@ -58,7 +60,7 @@ def run_conversation():
             }
         ]
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model=MODEL,
         messages=messages,
         tools=tools,
         tool_choice="auto",  # auto is default, but we'll be explicit
@@ -91,7 +93,7 @@ def run_conversation():
                 }
             )  # extend conversation with function response
         second_response = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model=MODEL,
             messages=messages,
         )  # get a new response from the model where it can see the function response
         return second_response.choices[0].message.content

@@ -19,7 +19,9 @@ user_proxy = UserProxyAgent(
         "use_docker": False,
         "last_n_messages": 3,
     },
-    human_input_mode="NEVER",
+    # The book uses "NEVER": generated code then runs without asking, for up
+    # to 20 rounds. "ALWAYS" lets you read each step before it runs.
+    human_input_mode="ALWAYS",
 )
 
 llm_config = {"config_list": config_list}
