@@ -7,6 +7,8 @@ becomes the system message for a chat with whatever LLM .env points at
 (LM Studio, Gemini or OpenAI).
 Stage 2, knowledge: a GPT with a PDF of the same name answers from the most
 relevant excerpts of that PDF (see knowledge.py).
+Stage 3, actions: the Task Organizer can call a web API through function
+calling (see actions.py).
 
 Run it from the repo root with:
     .venv/bin/streamlit run chapter_03/diy_gpts/app.py
@@ -18,6 +20,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
+import actions
 import knowledge
 
 HERE = Path(__file__).resolve().parent
@@ -63,6 +66,20 @@ with st.sidebar:
         help=f"Answer from excerpts of {knowledge_pdf.name}" if knowledge_pdf
              else "This GPT has no knowledge file (a PDF with the same name).",
     )
+    gpt_has_actions = actions.has_actions(names[choice])
+    use_actions = st.toggle(
+        "Use actions",
+        value=gpt_has_actions,
+        disabled=not gpt_has_actions,
+        help="Let the LLM call the task API (actions.py)" if gpt_has_actions
+             else "This GPT has no actions.",
+    )
+    if use_actions:
+        if actions.api_is_up():
+            st.caption(f"Task API: ✅ {actions.TASKS_API}")
+        else:
+            st.caption("Task API: ❌ not running - start it with "
+                       "`cd chapter_03 && ../.venv/bin/uvicorn daily_tasks_api:app --port 8100`")
     st.caption(f"Model: `{MODEL}`")
     if st.button("New chat"):
         st.session_state.history = []
@@ -104,12 +121,36 @@ if user_text := st.chat_input("Ask your assistant..."):
                     st.caption(f"Excerpt {i}")
                     st.text(chunk)
 
-        stream = client.chat.completions.create(
-            model=MODEL,
-            messages=build_messages(turn_prompt, st.session_state.history),
-            stream=True,
-        )
-        reply = st.write_stream(stream)   # shows the reply as it arrives, returns the full text
+        messages = build_messages(turn_prompt, st.session_state.history)
+        reply = None
+
+        # Actions: first ask the LLM with the tools attached. If it wants to call
+        # one, run the calls and add the results to the messages for the final
+        # answer below. (Like the history excerpts, they're kept for this turn only.)
+        if use_actions:
+            first = client.chat.completions.create(
+                model=MODEL, messages=messages, tools=actions.task_tools(),
+            ).choices[0].message
+            if first.tool_calls:
+                results = actions.run_tool_calls(first.tool_calls)
+                # The LLM's request goes into the messages too, so the tool
+                # results that follow have a call they answer.
+                messages = messages + [first.model_dump(exclude_none=True)] + results
+                with st.expander(f"Actions: {len(first.tool_calls)} call(s)"):
+                    for call, result in zip(first.tool_calls, results):
+                        st.caption(f"{call.function.name}({call.function.arguments})")
+                        st.code(result["content"], language="json")
+            else:
+                reply = first.content or ""   # no tool needed: this is already the answer
+                st.markdown(reply)
+
+        if reply is None:
+            stream = client.chat.completions.create(
+                model=MODEL,
+                messages=messages,
+                stream=True,
+            )
+            reply = st.write_stream(stream)   # shows the reply as it arrives, returns the full text
 
     # -----------------------------------------------------------------------
     # TODO 3: remember the assistant's reply, so the next turn includes it.
