@@ -38,11 +38,12 @@ The scripts read `OAI_CONFIG_LIST` from this folder (gitignored). For LM Studio:
 ```bash
 cp chapter_04/OAI_CONFIG_LIST.lmstudio.sample chapter_04/OAI_CONFIG_LIST
 ```
-The sample uses `llama-3.2-3b-instruct`. For the coding agents a coding model
-writes better code and more reliably answers with a ` ```python ` block: change
-`"model"` to `qwen2.5-coder-7b-instruct` (4.7 GB, Q4_K_M GGUF). These scripts
-don't use tool calls, so the Coder model's lack of tool support doesn't matter
-here.
+The sample uses `llama-3.2-3b-instruct`. A 7B model writes noticeably better
+code and more reliably answers with a ` ```python ` block: change `"model"` to
+`qwen2.5-7b-instruct` (4.7 GB, Q4_K_M GGUF). In a comparison on the book's
+snake-game task, it matched the code-specialised `qwen2.5-coder-7b-instruct`
+(valid Python with game over, growing snake, food and arrow keys each time) in
+about half the time, and unlike the Coder model it also handles tool calls.
 
 For Gemini's free tier, use this content instead (your key, model of choice):
 ```json
