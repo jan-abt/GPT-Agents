@@ -38,6 +38,12 @@ The scripts read `OAI_CONFIG_LIST` from this folder (gitignored). For LM Studio:
 ```bash
 cp chapter_04/OAI_CONFIG_LIST.lmstudio.sample chapter_04/OAI_CONFIG_LIST
 ```
+The sample uses `llama-3.2-3b-instruct`. For the coding agents a coding model
+writes better code and more reliably answers with a ` ```python ` block: change
+`"model"` to `qwen2.5-coder-7b-instruct` (4.7 GB, Q4_K_M GGUF). These scripts
+don't use tool calls, so the Coder model's lack of tool support doesn't matter
+here.
+
 For Gemini's free tier, use this content instead (your key, model of choice):
 ```json
 [
