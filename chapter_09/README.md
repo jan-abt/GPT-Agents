@@ -1,45 +1,57 @@
-# Chapter 9 on local models
+# Chapter 9: Mastering agent prompts with prompt flow (p. 212–243)
 
-The book builds everything in this chapter with Microsoft's **Prompt Flow**
-(the YAML + Jinja2 flows in `prompt_flow/`), mostly through its VS Code
-extension. On this project's Python 3.14 environment, installing
-`promptflow` would downgrade a dozen packages other chapters use (`fastapi`,
-`starlette`, `pandas`, `protobuf`, `opentelemetry`…). A separate environment
-would work (about 71 MB), but we rebuilt the chapter's core idea in plain
-Python instead.
+**In one sentence:** compare prompts systematically: run every variant over
+the same batch of inputs, score the answers with a rubric, and let the numbers
+decide.
 
-## `evaluate_profiles.py`: comparing profiles with an LLM judge (9.4–9.7)
+## Key ideas
 
-It uses the book's own files from `prompt_flow/recommender_with_grounding/`:
-the two recommender profiles (`recommend.jinja2`, `recommender_variant_1.jinja2`),
-the rubric (`evaluate_recommendation.jinja2`) and the test requests
-(`bulk_recommend.jsonl`).
+- **Systematic prompt engineering (9.1, p. 213):** write → evaluate → change →
+  evaluate again, on many inputs, not one gut-feeling example.
+- **Profiles vs. personas (9.2, p. 216):** the persona is the personality
+  part; the profile is the whole agent prompt.
+- **Prompt Flow (9.3, p. 217):** Microsoft's tool for prompt pipelines: LLM
+  nodes fill **Jinja2 templates** (`{{subject}}`, `{{genre}}`), Python nodes
+  process the output, and flows can be served as an API.
+- **Rubrics and grounding (9.4–9.5, p. 224–229):** a rubric is a marking
+  scheme (criteria + points); grounding checks the answer against what was
+  asked, or against facts.
+- **LLM as judge (9.6, p. 230):** an LLM scores another LLM's answers with the
+  rubric.
+- **Comparing profiles (9.7, p. 232):** batch runs over test requests, parse
+  the scores, compare averages.
 
+## Walkthrough
+
+1. Look at the book's flow in `prompt_flow/recommender_with_grounding/`:
+   `recommend.jinja2` and `recommender_variant_1.jinja2` (two profiles),
+   `evaluate_recommendation.jinja2` (the rubric), `bulk_recommend.jsonl` (10
+   test requests), `flow.dag.yaml` (how the nodes connect).
+2. Run our plain-Python version, which uses those same files:
+   ```bash
+   cd ~/Code/GPT-Agents && .venv/bin/python chapter_09/evaluate_profiles.py   # 4 requests, ~14 min on a CPU
+   ```
+   TODO 24 renders a Prompt Flow chat template into messages, TODO 25 asks a
+   variant, TODO 26 is the judge (JSON with scores 1–5), TODO 27 runs the batch
+   and prints the comparison. `--all` runs all 10 requests.
+
+## What we found
 ```
-for each test request:
-    for each profile variant:
-        the LLM recommends 3 items                    TODO 24 (render the template), 25
-        an LLM judge scores each item 1-5             TODO 26
-average the scores per variant and compare            TODO 27
+variant      subject   format    genre   custom  overall  items
+variant_0       4.92     3.50     4.75     4.42     4.40     12
+variant_1       4.67     3.75     4.75     4.50     4.42     12
 ```
+- **A tie:** 12 items per variant is far too few to separate them.
+- The judge caught **format** problems (a TV series offered as a podcast).
+- The judge missed **invented titles** ("The Goblin Queen Chronicles: The
+  Podcast") and arguably an R-rated book. It checks answers against the
+  request, not against reality.
+- The same model was player and referee.
+- The book's rubric asks for scores 1–5 but shows an example with 8 and 10, and
+  its parser breaks on small format changes; we ask for JSON with a schema.
 
-Configure the model in `chapter_09/.env` (gitignored; same format as
-`chapter_2/.env.example`), then from the repo root:
-```bash
-.venv/bin/python chapter_09/evaluate_profiles.py         # first 4 requests (16 LLM calls)
-.venv/bin/python chapter_09/evaluate_profiles.py --all   # all 10 (40 calls; slow on a CPU)
-```
-
-Changes from the book's flow:
-- **The judge answers in JSON**, with a schema that enforces scores from 1 to 5.
-  The book's rubric asks for 1–5 but shows an example with 8 and 10, and its
-  parser (`parsing_results.py`) breaks as soon as the LLM formats a line
-  differently.
-- **A fourth criterion, `custom`**: does the item respect the request's special
-  instruction ("don't include any R rated content")? That's grounding: checking
-  the answer against what was actually asked.
-
-Keep in mind that **the same model plays recommender and judge**, so it may
-favour its own style; and a judge scores what it believes about a book or film,
-which may itself be wrong. LLM judges are useful for comparing variants, not
-as proof of quality.
+## Setup notes
+Installing `promptflow` in the shared `.venv` would downgrade about a dozen
+packages other chapters use (`fastapi`, `pandas`, `protobuf`, …); a separate
+environment would be about 71 MB. Our script needs nothing extra.
+`chapter_09/.env` (gitignored) sets the model.

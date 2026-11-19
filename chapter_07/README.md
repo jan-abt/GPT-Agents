@@ -1,34 +1,49 @@
-# Chapter 7 on local models
+# Chapter 7: Assembling and using an agent platform (p. 160–179)
 
-## 7.2 The Streamlit chat apps: work as in the book
+**In one sentence:** an agent platform puts the components in one app (a chat
+UI, agent profiles, actions, later knowledge and memory); the book's is
+**Nexus**, ours is **DIY GPTs**.
 
-Both scripts use the plain `openai` client, so they run on LM Studio. Give
-this folder its own `.env` (gitignored; same format as
-`chapter_2/.env.example`), then from the repo root:
-```bash
-.venv/bin/streamlit run chapter_07/chatgpt_clone_response.py
-.venv/bin/streamlit run chapter_07/chatgpt_clone_streaming.py
-```
-They differ only in how the reply arrives: all at once behind a spinner
-(`response`), or word by word with `st.write_stream()` (`streaming`). This is
-the same pattern as stage 1 of `chapter_03/diy_gpts`.
+## Key ideas
 
-## 7.1, 7.3–7.5: Nexus, the author's agent platform
+- **Nexus (7.1, p. 161):** the author's Streamlit platform: choose an LLM, a
+  persona and actions per chat.
+- **Streamlit chat apps (7.2, p. 165):** a chat UI in about 35 lines. Two
+  ways to show the reply: all at once behind a spinner, or **streamed** word
+  by word with `st.write_stream()`.
+- **Profiles and personas (7.3, p. 170):** Nexus describes an agent in a YAML
+  file with sections for persona, actions, knowledge, memory, evaluation and
+  planning (chapter 1's component list as a file format).
+- **The agent engine (7.4, p. 172):** a class wrapping the LLM: send
+  messages, keep history, run tools.
+- **Actions (7.5, p. 174):** native and semantic functions, as in chapter 5.
+  Nexus's `@agent_action` decorator **generates the JSON Schema tool
+  description from the function's signature and docstring**; DIY GPTs writes
+  it by hand (`task_tools()`).
 
-The book installs Nexus with
-`pip install git+https://github.com/cxbxmxcx/Nexus.git` on Python 3.10. Its
-dependencies are pinned to 2024 versions (`chromadb 0.4`, `langchain 0.1`,
-`fastapi 0.110`, …) and are heavy, so they are unlikely to install on
-Python 3.14. We skipped installing it and read these sections for the ideas,
-which `chapter_03/diy_gpts` already implements:
+## Walkthrough
 
-| Nexus (book) | DIY GPTs |
-|---|---|
-| agent **profile** with a persona (YAML file, 7.3) | instruction files `chapter_03/*_v1.txt` |
-| agent **engine** that calls the LLM (7.4) | `app.py`'s chat loop |
-| **actions**: native and semantic functions (7.5) | `actions.py` (stage 3), `chapter_05/movie_recommender.py` |
-| knowledge/memory (later chapters) | `knowledge.py` (stage 2) |
+1. The two chat apps (they read `chapter_07/.env`):
+   ```bash
+   cd ~/Code/GPT-Agents && .venv/bin/streamlit run chapter_07/chatgpt_clone_response.py
+   cd ~/Code/GPT-Agents && .venv/bin/streamlit run chapter_07/chatgpt_clone_streaming.py
+   ```
+   Compare the scripts: they differ only in how the reply arrives.
+2. Ask "Name the three primary colours", then "which two of them make
+   green?". We got "red and green make green" (it had chosen the RGB colour
+   model, where the question doesn't fit). With "…in one short sentence", the
+   model chose paint colours and answered correctly. Precise questions matter
+   (chapter 2); fluent isn't correct.
+3. Map Nexus onto DIY GPTs:
 
-One Nexus convenience DIY GPTs doesn't have: an `@agent_action` decorator
-generates the tool's JSON Schema from the Python function's signature and
-docstring, where DIY GPTs writes it by hand (`task_tools()`).
+   | Nexus | DIY GPTs (`chapter_03/diy_gpts`) |
+   |---|---|
+   | profile / persona | `chapter_03/*_v1.txt` instruction files |
+   | agent engine | the chat loop in `app.py` |
+   | actions | `actions.py` (stage 3) |
+   | knowledge, memory | `knowledge.py`, `memory.py` (stages 2, 4) |
+
+## What isn't installed
+Nexus pins 2024 package versions (`chromadb 0.4`, `langchain 0.1`,
+`fastapi 0.110`, …), wants Python 3.10, and is heavy. We use DIY GPTs instead;
+Nexus reappears in the book in chapters 8 and 11, rebuilt there too.

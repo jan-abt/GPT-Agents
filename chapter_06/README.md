@@ -1,54 +1,74 @@
-# Chapter 6 on local models
+# Chapter 6: Building autonomous assistants (p. 129–159)
 
-## 6.1 Behavior trees: works as in the book
+**In one sentence:** a behavior tree gives an agent a fixed, readable
+structure (steps, fallbacks, retries), and its nodes can be LLM calls: an
+*agentic* behavior tree.
 
-`py_trees` is small (under 1 MB) and needs no LLM:
-```bash
-.venv/bin/pip install py_trees
-.venv/bin/python chapter_06/first_btree.py
-```
-Try changing `if True:` to `if False:` in `HasApple` to watch the Selector fall
-back to the pear branch.
+## Key ideas
 
-## 6.2–6.5: the GPT Assistants Playground
+- **Behavior trees (6.1, p. 130).** From game AI and robotics. Every node
+  returns SUCCESS, FAILURE or RUNNING; one *tick* walks the tree from the root,
+  top to bottom, left to right.
 
-The book runs these sections in the author's separate Gradio app
-(`GPTAssistantsPlayground`), built on **OpenAI's Assistants API**. That API is
-OpenAI-only (paid), and OpenAI announced its retirement for 2026, so it
-doesn't work with LM Studio or Gemini. The YouTube → X example (6.3.4) also
-needs an X account with your password in a file.
+  | Node | Rule |
+  |---|---|
+  | Sequence `{-}` | children in order; fails at the first failure (an AND) |
+  | Selector / Fallback `{o}` | tries children until one succeeds (an OR: plan A, else plan B) |
+  | Condition | a yes/no check |
+  | Action | does something |
+  | Decorator | wraps one child: retry, invert, time limit |
 
-## 6.3.2 Coding challenge ABT, rebuilt: `coding_challenge_abt.py`
+- **Why trees (6.1.2, p. 132):** more modular and scalable than state
+  machines or decision trees.
+- **Agentic behavior trees (6.3, p. 143):** nodes are LLM roles. The book's
+  coding challenge (6.3.2, p. 145): **Hacker** writes a solution, **Judge**
+  reviews it, **Verifier** checks it.
+- **Silos vs. conversation (6.3.3, 6.4):** agents can pass files or results
+  instead of chatting: less noise than chapter 4's group chat, less emergent
+  behaviour.
+- **Back chaining (6.5, p. 155):** design a tree backwards from the goal; the
+  **blackboard** is a shared key/value store nodes use to pass data.
 
-An *agentic behavior tree*: py_trees nodes that call your local LLM.
+## Walkthrough
 
-```
--^- Retry (3 attempts)
-    {-} Solve the challenge
-        --> Hacker    (action)     LLM writes simulate_grass()       TODO 13
-        --> Judge     (action)     LLM reviews and fixes the code    TODO 14
-        --> Verifier  (condition)  runs the book's 6 tests           TODO 15
-```
-(TODO 16 builds and ticks the tree.)
+1. **`first_btree.py`** (6.1.3):
+   ```bash
+   cd ~/Code/GPT-Agents && .venv/bin/python chapter_06/first_btree.py
+   ```
+   Selector → (has apple → eat apple) or (has pear → eat pear). It eats the
+   apple every tick, because the selector stops at the first success. Change
+   `HasApple` to `if False:` and the selector falls back to the pear.
+2. **`coding_challenge_abt.py`** (6.3.2, rebuilt for local models):
+   ```bash
+   cd ~/Code/GPT-Agents && .venv/bin/python chapter_06/coding_challenge_abt.py
+   ```
+   ```
+   -^- Retry (3 attempts)                TODO 16
+       {-} Solve the challenge
+           --> Hacker    (action)        TODO 13: LLM writes simulate_grass()
+           --> Judge     (action)        TODO 14: LLM reviews and fixes it
+           --> Verifier  (condition)     TODO 15: runs the book's 6 tests
+   ```
+   The puzzle ("Plant the Grass") is a flood fill: `x` rock, `o` dirt, `+`
+   grass; grow from `(x, y)` = (row, column) up/down/left/right through dirt.
+   The **Verifier shows the code and asks before running it** (separate
+   process, temporary folder, 10-second limit). Watch the tree printout after
+   each tick, and the blackboard keys (`solution`, `judged`, `feedback`).
 
-Differences from the book:
-- The **Verifier runs the real tests** (listing 6.6) instead of asking a third
-  LLM whether the code looks right. LLM reviewers miss real bugs; tests don't.
-- A **Retry decorator** (table 6.1) reruns the sequence when the tests fail,
-  and the Hacker gets the failed tests as feedback.
-- The nodes share data on the py_trees **blackboard** (section 6.5) instead of
-  the book's `solution.py` / `judged_solution.py` files.
+## What we found
+- Qwen solved it **6/6 on the first attempt** (a recursive DFS).
+- In a test run, the Judge praised code that would have looped forever and
+  missed the start cell. **Real tests beat an LLM reviewer**, which is why our
+  Verifier runs tests instead of asking a third LLM, as the book does.
+- The accepted solution still modified its input list; tests only check what
+  they test.
 
-Configure the model in `chapter_06/.env` (gitignored; same format as
-`chapter_2/.env.example`). `qwen2.5-7b-instruct` works well.
+## What isn't runnable
+Sections 6.2–6.5 run in the author's **GPT Assistants Playground**, built on
+OpenAI's Assistants API (OpenAI-only and paid; OpenAI announced its retirement
+for 2026). The YouTube → X example (6.3.4) also needs an X account.
 
-```bash
-.venv/bin/python chapter_06/coding_challenge_abt.py
-```
-
-**The Verifier runs code the LLM wrote, on your machine.** It shows you the
-code and asks before running it, in a separate process in a temporary folder,
-with a 10-second time limit. `--yes` skips the question; use it only once you
-trust what the model produces.
-
-Each attempt takes a few minutes on a CPU (two LLM calls).
+## Setup notes
+`.venv/bin/pip install py_trees` (under 1 MB). `chapter_06/.env` (gitignored)
+sets the model; `qwen2.5-7b-instruct` works well. `--yes` skips the Verifier's
+question.

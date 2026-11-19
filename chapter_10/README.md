@@ -1,55 +1,37 @@
-# Chapter 10 on local models
+# Chapter 10: Agent reasoning and evaluation (p. 244–271)
 
-The book runs each reasoning technique as a Microsoft **Prompt Flow** flow
-(`prompt_flow/`). As in chapter 9, `promptflow` would downgrade packages other
-chapters use, so the techniques are rebuilt in plain Python. They are only
-prompts, so nothing is lost.
+**In one sentence:** how you prompt changes how well an LLM reasons; letting
+it think step by step helps most, and only measuring against known answers
+tells you what actually works.
 
-## `reasoning_techniques.py`: five techniques, one scoreboard
+## Key ideas
 
-Every technique answers the same time-travel word problems, and **code**
-checks each answer against a solution worked out by hand:
+| Technique | Book | How |
+|---|---|---|
+| Question-and-answer | 10.1.1, p. 246 | answer from given context; say "Unsure" if not sure |
+| Few-shot | 10.1.2, p. 248 | examples first (made-up words "whatpu", "farduddle") |
+| Zero-shot | 10.1.3, p. 250 | no examples ("classify as neutral, negative or positive") |
+| Chain of thought (CoT) | 10.2.1, p. 253 | a fully worked example first |
+| Zero-shot CoT | 10.2.2, p. 257 | just add "Let's think step by step." |
+| Prompt chaining | 10.2.3, p. 258 | decompose → calculate → combine, one call each |
+| Self-consistency | 10.3.1, p. 262 | the same CoT several times, majority answer |
+| Tree of thoughts | 10.3.2, p. 266 | three "experts" each plan; the best branch wins |
 
-| Technique | Book | How | LLM calls |
-|---|---|---|---|
-| direct | 10.1 | "reply with the final number only" | 1 |
-| zero-shot CoT | 10.2.2 | "Let's think step by step." | 1 |
-| few-shot CoT | 10.2.1 | a fully worked example first | 1 |
-| chaining | 10.2.3 | decompose → calculate → solve (the book's three prompts) | 3 |
-| self-consistency | 10.3.1 | zero-shot CoT 3 times at temperature 1, majority vote | 3 |
+## Walkthrough
 
-TODOs 28–32 describe each part above its code. Configure the model in
-`chapter_10/.env` (gitignored; same format as `chapter_2/.env.example`), then
-from the repo root:
-```bash
-.venv/bin/python chapter_10/reasoning_techniques.py           # 4 problems, 36 LLM calls
-.venv/bin/python chapter_10/reasoning_techniques.py --quick   # first 2 problems
-```
+1. Skim the book's prompts in `prompt_flow/`: `zero-shot-cot-prompting/cot.jinja2`
+   ("Let's think step by step") and the three `prompt-chaining/*.jinja2`
+   templates.
+2. Run our comparison (four time-travel word problems with answers worked out
+   by hand, checked by code):
+   ```bash
+   cd ~/Code/GPT-Agents && .venv/bin/python chapter_10/reasoning_techniques.py   # ~25 min on a CPU
+   ```
+   `--quick` runs two problems. TODO 28 asks and extracts the number, 29 the
+   single-call techniques, 30 chaining, 31 self-consistency (with votes), 32 the
+   scoreboard.
 
-**Why our own problems?** The book's problem files have no expected answers;
-an LLM judges whether two answers "match" (`evaluate_answer.jinja2`), which
-chapter 9 showed is unreliable. And the book's own worked example (Sarah, who
-arrives 2 years early) answers 729 days by subtracting the day she spent
-preparing, although that day was spent in the past too. Problem 3 here tests
-exactly that trap, and the few-shot example is a new one, so the model isn't
-taught the mistake.
-
-## Tree of thoughts (10.3.2): explained, not run
-
-The book's `tree-of-thoughts` flow asks for **three "experts"**, each writing a
-step-by-step plan in `<expert1>…</expert1>` tags. The plans are split apart,
-each is followed to an answer, and an evaluation step picks the best branch.
-It's self-consistency with **different strategies** rather than repeated tries
-of one. It costs many calls per problem (plans, solutions, evaluation), which
-on a CPU means many minutes per problem.
-
-## Not covered
-
-`q_agent.py` is a sketch of Q-learning with placeholder code (random
-"embeddings"). The book doesn't use it as an exercise.
-
-## Results with qwen2.5-7b-instruct (4 problems, on a CPU)
-
+## What we found (qwen2.5-7b-instruct)
 ```
 technique           solved  LLM calls  seconds
 direct                0/4          4       17
@@ -58,15 +40,23 @@ few-shot CoT          3/4          4      233
 chaining              2/4         12      312
 self-consistency      3/4         12      589
 ```
+- **Room to reason is what matters:** "answer only" solved nothing.
+- **More calls ≠ better:** chaining did worse; one step treated a 100-year jump
+  as ageing (138 instead of 38).
+- **Self-consistency fixes random slips, not shared mistakes:** it outvoted a
+  stray 2105 on problem 1, but on problem 3 all runs said 729: unanimous and
+  wrong.
+- **Problem 3 beat everything:** the answer is 730 (the preparation day is one
+  of the days in the past); every technique, and the book's own worked
+  example, says 729.
 
-- **Reasoning steps matter most:** asking for the number only solved nothing;
-  every technique that let the model reason solved most problems.
-- **More calls didn't buy more accuracy:** chaining (3 calls) did worse than a
-  single "Let's think step by step" - one step treated a 100-year jump as
-  ageing (Leo: 138 instead of 38).
-- **Self-consistency fixes random slips, not shared mistakes:** on problem 1 it
-  outvoted a stray 2105 ([2117, 2105, 2117]); on problem 3 all three runs said
-  729 - unanimous and wrong.
-- **Problem 3 beat every technique:** all answered 729 (or 2), subtracting the
-  preparation day - the same mistake as the book's own worked example.
-- Results vary between runs (temperature, model); rerun to see how stable they are.
+## Why our own problems
+The book's problem files have no expected answers (an LLM judges whether
+answers "match"), and its worked example contains the 729 mistake. Results vary
+between runs (temperature); rerun to see how stable they are. Tree of thoughts
+isn't run: many calls per problem, too slow on a CPU. `q_agent.py` is a
+placeholder sketch the book doesn't use.
+
+## Setup notes
+Prompt Flow isn't installed (see chapter 9). `chapter_10/.env` (gitignored)
+sets the model.

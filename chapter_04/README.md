@@ -1,106 +1,66 @@
-# Chapter 4 on local and free models
+# Chapter 4: Exploring multi-agent systems (p. 68–97)
 
-The book runs chapter 4 with GPT-4 and the 2024 versions of AutoGen and
-CrewAI. Those packages have changed a lot since then. This page explains how
-to run the chapter with a local model in LM Studio (or Gemini's free tier) on
-current packages, and which parts don't work any more.
+**In one sentence:** several agents with different roles (writer, reviewer,
+user proxy) working on one task do better than one prompt, and the way they
+talk to each other matters.
+
+## Key ideas
+
+- **Roles (4.2.2, p. 79):** the same LLM with different system messages
+  (Engineer, Reviewer) acts as a team. One checking the other's work catches
+  what a single pass misses.
+- **The user proxy:** an agent that stands in for you. It doesn't call the
+  LLM; it asks you for input and **runs the code** other agents write, then
+  reports the output back. This is the "code interpreter" idea from chapter 3.
+- **Nested chat vs. group chat (4.3, p. 82):** a nested chat passes work along
+  agent by agent (it can lose information, like the telephone game); a group
+  chat shares one conversation, with a manager LLM choosing who speaks next.
+- **Cache (4.2.3, p. 81):** stored replies make reruns instant and identical.
+- **CrewAI (4.4–4.5, p. 84–95):** the same goal with a different design:
+  agents with role, goal and backstory work through explicit tasks,
+  sequentially or hierarchically. **AgentOps (4.4.2, p. 87)** shows the cost:
+  one joke from the book's crew cost over 50 cents on GPT-4.
+- **Agent-written code is fragile:** libraries change after the model's
+  training, so the book prefers giving agents tested tools (chapter 5).
+
+## Walkthrough
+
+Every script's task is a snake game. **These agents run model-written code on
+your machine:** read it before pressing Enter.
+```bash
+cd ~/Code/GPT-Agents/chapter_04 && ~/Code/GPT-Agents/.venv/bin/python autogen_start.py
+```
+1. **`autogen_start.py`**: user proxy + assistant. At the prompt, **Enter**
+   runs the code in the last message, **text** sends feedback, **`exit`**
+   stops. If the model's reply has no ` ```python ` block, Enter sends an empty
+   message (we saw Llama answer "your input was incomplete").
+2. **`autogen_coding_critic.py`**: after the Engineer answers, a nested chat
+   with the **Reviewer** runs automatically, listing issues.
+3. **`autogen_coding_critic_cache.py`**: the same, cached in `.cache/42`; run
+   it twice. Change `cache_seed` for a fresh answer.
+4. **`autogen_coding_group.py`**: a group chat; watch the order in which the
+   manager picks speakers. (Set to `human_input_mode="ALWAYS"` here; the book
+   uses `"NEVER"`, which runs code unasked for up to 20 rounds.)
 
 ## What works where
 
-| Section | Book uses | Status here |
-|---|---|---|
-| 4.2–4.3 AutoGen: agents, critic, group chat | `pyautogen` 0.2 | ✅ works with **AG2 0.14** (see below) |
-| 4.4–4.5 CrewAI | `crewai[tools]` | ❌ CrewAI needs Python ≤ 3.13; this venv is 3.14 |
-| 4.4.2 AgentOps | `agentops` | installs, but it's a cloud service (sign-up + API key; agent conversations are sent to their servers) |
-| 4.1 AutoGen Studio | `autogenstudio` | ❌ doesn't install on 3.14, and today's version is a rewrite whose UI no longer matches the book |
-| `describe_image.py` | GPT-4 Vision | needs a vision model; the local Llama is text-only |
+| Section | Status here |
+|---|---|
+| 4.2–4.3 AutoGen | ✅ with **AG2 0.14** (below) |
+| 4.1 AutoGen Studio | ❌ doesn't install on Python 3.14; today's version no longer matches the book's UI |
+| 4.4–4.5 CrewAI | ❌ needs Python ≤ 3.13 (read for the ideas) |
+| 4.4.2 AgentOps | a cloud service (sign-up; conversations go to their servers) |
+| `describe_image.py` | needs a vision model and an OpenAI key |
 
-## Why AG2 0.14
-
-- `pip install pyautogen` now installs Microsoft's rewritten AutoGen (0.7+),
-  which has a different API: the book's `from autogen import AssistantAgent, ...`
-  fails.
-- **AG2** is the community fork that kept the original API. Its 1.x versions
-  changed the API again, so install the last 0.x version:
-  ```bash
-  .venv/bin/pip install "ag2[openai]<1"
-  ```
-- AG2 0.14 removed `config_list_from_json()`. The four `autogen_*.py` scripts
-  have one changed line each:
-  ```python
-  config_list = LLMConfig.from_json(path="OAI_CONFIG_LIST").config_list
-  ```
-  Everything else is the book's code.
-
-## Configure the model
-
-The scripts read `OAI_CONFIG_LIST` from this folder (gitignored). For LM Studio:
-```bash
-cp chapter_04/OAI_CONFIG_LIST.lmstudio.sample chapter_04/OAI_CONFIG_LIST
-```
-The sample uses `llama-3.2-3b-instruct`. A 7B model writes noticeably better
-code and more reliably answers with a ` ```python ` block: change `"model"` to
-`qwen2.5-7b-instruct` (4.7 GB, Q4_K_M GGUF). In a comparison on the book's
-snake-game task, it matched the code-specialised `qwen2.5-coder-7b-instruct`
-(valid Python with game over, growing snake, food and arrow keys each time) in
-about half the time, and unlike the Coder model it also handles tool calls.
-
-For Gemini's free tier, use this content instead (your key, model of choice):
-```json
-[
-    {
-        "model": "gemini-3.5-flash-lite",
-        "api_key": "<your Gemini API key>",
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
-    }
-]
-```
-Agent conversations use many requests; Gemini's free tier allows about 20 per
-day per model, so LM Studio is the better choice here.
-
-## Run the scripts
-
-The scripts are plain Python (not Streamlit). In IntelliJ, open the script and
-click ▶. The run configuration's **working directory must be `chapter_04`**,
-because that's where `OAI_CONFIG_LIST` is looked up. From a terminal:
-```bash
-cd chapter_04 && ../.venv/bin/python autogen_start.py
-```
-
-Suggested order: `autogen_start.py` → `autogen_coding_critic.py` →
-`autogen_coding_critic_cache.py` → `autogen_coding_group.py`.
-
-The book's task in every script is a snake game with Pygame. `pygame` has no
-build for Python 3.14; the community edition is a drop-in replacement
-(`import pygame` still works, about 12 MB):
-```bash
-.venv/bin/pip install pygame-ce
-```
-
-## ⚠️ These agents run code on your computer
-
-The user agent (`UserProxyAgent`) executes the Python code the model writes,
-with `use_docker: False`, directly on your machine, in `chapter_04/working/`
-(gitignored).
-
-- `autogen_start.py` and the two `autogen_coding_critic*.py` scripts use
-  `human_input_mode="ALWAYS"`: the agent stops and waits for you in the Run
-  console before each step. **Read the code before you press Enter.** Type
-  `exit` to stop.
-- **`autogen_coding_group.py` uses `human_input_mode="NEVER"`**: it runs
-  whatever code the model writes, without asking, for up to 20 rounds. Change
-  it to `"ALWAYS"` before running it, at least until you've seen what the
-  local model produces.
-
-The book recommends Docker for running agent code safely; that's
-`"use_docker": True` (requires Docker to be installed).
-
-## What to expect from a 3B model
-
-- Simple two-agent chats work well.
-- Code quality is modest: expect a snake game that needs a few rounds of
-  fixes, or doesn't run. Seeing the critic catch (or miss) problems is part of
-  the lesson.
-- In a group chat the manager uses the model to pick who speaks next. Small
-  models are unreliable at this, so the conversation may wander or loop.
-  Gemini does better if you have requests left.
+## Setup notes
+- `pip install pyautogen` now installs Microsoft's rewritten AutoGen with a
+  different API. Use the fork that kept the book's API:
+  `.venv/bin/pip install "ag2[openai]<1"`. Each script has one changed line:
+  `LLMConfig.from_json(path="OAI_CONFIG_LIST").config_list`.
+- `OAI_CONFIG_LIST` (gitignored) in this folder picks the model: copy
+  `OAI_CONFIG_LIST.lmstudio.sample` and set `"model"` to `qwen2.5-7b-instruct`.
+  For Gemini, use its `base_url` and your key; agent runs use many requests.
+- The snake game needs `pygame-ce` (`pygame` has no build for Python 3.14):
+  `.venv/bin/pip install pygame-ce`.
+- Run from this folder (IntelliJ: working directory `chapter_04`), because
+  `OAI_CONFIG_LIST` is looked up there. Generated code goes to `working/`.
