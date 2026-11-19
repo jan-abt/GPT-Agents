@@ -66,6 +66,13 @@ with st.sidebar:
         help=f"Answer from excerpts of {knowledge_pdf.name}" if knowledge_pdf
              else "This GPT has no knowledge file (a PDF with the same name).",
     )
+    # Chapter 8: how to find the excerpts - by matching words, or by meaning.
+    search_method = st.radio(
+        "Search the book by", ["Keywords", "Embeddings"], index=1, horizontal=True,
+        disabled=not use_knowledge,
+        help="Keywords: count matching words (TODO 5). Embeddings: compare meaning "
+             "with the local embedding model (TODOs 17-19).",
+    )
     gpt_has_actions = actions.has_actions(names[choice])
     use_actions = st.toggle(
         "Use actions",
@@ -114,9 +121,17 @@ if user_text := st.chat_input("Ask your assistant..."):
         turn_prompt = system_prompt
         if use_knowledge and knowledge_pdf:
             chunks = knowledge.split_into_chunks(knowledge.load_text(knowledge_pdf))
-            found = knowledge.search(chunks, user_text)
+            if search_method == "Embeddings":
+                # The first time, every chunk is embedded (about a minute); after
+                # that the vectors come from the cache in .cache/.
+                with st.spinner("Embedding the book (first time only)..."):
+                    vectors = knowledge.load_vectors(client, knowledge_pdf, chunks)
+                found = knowledge.semantic_search(client, chunks, vectors, user_text)
+            else:
+                found = knowledge.search(chunks, user_text)
             turn_prompt = knowledge.add_knowledge(system_prompt, found)
-            with st.expander(f"Knowledge: {len(found)} excerpts from {knowledge_pdf.name}"):
+            with st.expander(f"Knowledge: {len(found)} excerpts from {knowledge_pdf.name} "
+                             f"({search_method.lower()})"):
                 for i, chunk in enumerate(found, 1):
                     st.caption(f"Excerpt {i}")
                     st.text(chunk)

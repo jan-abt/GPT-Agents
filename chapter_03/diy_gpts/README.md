@@ -22,7 +22,7 @@ you. Here you write it, so you can see exactly what is sent to the model.
 | Chapter 3 exercise (in ChatGPT) | DIY version | Status |
 |---|---|---|
 | 1. Culinary Companion with custom rules | Stage 1: instructions + chat (`app.py`) | ✅ done |
-| 4. Knowledge assistant from uploaded files | Stage 2: Calculus Made Easy with retrieval (`knowledge.py`) | ✅ done (keyword search) |
+| 4. Knowledge assistant from uploaded files | Stage 2: Calculus Made Easy with retrieval (`knowledge.py`) | ✅ done (keywords, and embeddings since chapter 8) |
 | 3. Custom action with FastAPI + ngrok | Stage 3: Task Organizer calls `../daily_tasks_api.py` through function calling (`actions.py`; local, no ngrok needed) | in progress |
 | 2. Data analysis with the code interpreter | Stage 4: running generated code | optional |
 | 5. Publish to the GPT Store | not possible; the code is on GitHub instead | — |
@@ -42,7 +42,8 @@ chapter 7.
 ## Setup
 
 1. Create the project's virtual environment (see the main README) and install
-   this folder's packages into it (Streamlit for the UI, pypdf to read PDFs):
+   this folder's packages into it (Streamlit for the UI, pypdf to read PDFs,
+   numpy for the embedding search):
    ```bash
    .venv/bin/pip install -r chapter_03/diy_gpts/requirements.txt
    ```
@@ -134,6 +135,37 @@ the passage that actually explains something. The book's definition of `d`
 does the little letter d in dx mean?"*. Weighting rare words higher (TF-IDF)
 helps a bit, but not enough. Searching by meaning instead of by words, with
 **embeddings**, is the next step (and the topic of chapter 8).
+
+### Chapter 8 upgrade: search by meaning (TODOs 17–19)
+
+Book: chapter 8, sections 8.3 (semantic search, p. 184–192) and 8.5 (RAG for
+agent knowledge, p. 196). The sidebar's **Search the book by** switch chooses
+between **Keywords** (TODO 5) and **Embeddings**:
+
+17. `embed()`: turn texts into vectors with a local embedding model, through
+    the same OpenAI client (LM Studio answers `/v1/embeddings` too).
+18. `load_vectors()`: embed all 395 chunks once (about a minute on a CPU) and
+    cache them in `.cache/<book>.<model>.npy`.
+19. `semantic_search()`: embed the question and rank the chunks by cosine
+    similarity.
+
+It needs LM Studio's `text-embedding-nomic-embed-text-v1.5` (84 MB) loaded,
+and in `diy_gpts/.env`:
+```
+EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
+```
+
+Rank of the passage that actually answers the question:
+
+| Question | Keywords | Embeddings |
+|---|---|---|
+| "what does the little letter d in dx mean?" | 47 | **2** (rank 1: another passage defining `d` as "a bit of") |
+| "What does the long S symbol for integration mean?" | 15 | **2** |
+| "What are the preliminary terrors?" | 1 | 1 |
+
+With embeddings, Qwen answered the `d` question with the book's own words,
+"a little bit of", read "dee-eks"; with keywords it got a page of integration
+formulas and answered from its general knowledge.
 
 ## Stage 3: actions (function calling)
 
