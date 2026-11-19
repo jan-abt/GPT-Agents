@@ -9,6 +9,8 @@ Stage 2, knowledge: a GPT with a PDF of the same name answers from the most
 relevant excerpts of that PDF (see knowledge.py).
 Stage 3, actions: the Task Organizer can call a web API through function
 calling (see actions.py).
+Stage 4, memory: facts about you are extracted from each exchange, stored,
+and recalled in later chats, by every GPT (see memory.py).
 
 Run it from the repo root with:
     .venv/bin/streamlit run chapter_03/diy_gpts/app.py
@@ -22,6 +24,7 @@ from openai import OpenAI
 
 import actions
 import knowledge
+import memory
 
 HERE = Path(__file__).resolve().parent
 INSTRUCTIONS_DIR = HERE.parent                  # chapter_03: the book's GPT instruction files
@@ -87,6 +90,16 @@ with st.sidebar:
         else:
             st.caption("Task API: ❌ not running - start it with "
                        "`cd chapter_03 && ../.venv/bin/uvicorn daily_tasks_api:app --port 8100`")
+    # Stage 4: long-term memory, shared by all GPTs.
+    use_memory = st.toggle("Use memory", value=True,
+                           help="Remember facts about you across chats and GPTs (memory.py)")
+    stored = memory.load_store()
+    with st.expander(f"Memories ({len(stored)})"):
+        for item in stored:
+            st.caption(f"• {item['text']}")
+        if stored and st.button("Forget everything"):
+            memory.forget_all()
+            st.rerun()
     st.caption(f"Model: `{MODEL}`")
     if st.button("New chat"):
         st.session_state.history = []
@@ -136,6 +149,15 @@ if user_text := st.chat_input("Ask your assistant..."):
                     st.caption(f"Excerpt {i}")
                     st.text(chunk)
 
+        # Memory (stage 4): recall facts relevant to this question.
+        if use_memory:
+            recalled = memory.recall(client, user_text)
+            turn_prompt = memory.add_memories_to_prompt(turn_prompt, recalled)
+            if recalled:
+                with st.expander(f"Memory: {len(recalled)} fact(s) recalled"):
+                    for fact in recalled:
+                        st.caption(f"• {fact}")
+
         messages = build_messages(turn_prompt, st.session_state.history)
         reply = None
 
@@ -173,3 +195,11 @@ if user_text := st.chat_input("Ask your assistant..."):
     # (remember the message-history lesson from chapter 2).
     # -----------------------------------------------------------------------
     st.session_state.history.append({"role": "assistant", "content": reply})
+
+    # Memory (stage 4): let the LLM pick out facts about you worth keeping.
+    # That's one more LLM call per turn - switch "Use memory" off to skip it.
+    if use_memory:
+        with st.spinner("Updating memory..."):
+            added = memory.add_memories(client, memory.extract_facts(client, MODEL, user_text, reply))
+        if added:
+            st.caption("🧠 Remembered: " + " · ".join(added))

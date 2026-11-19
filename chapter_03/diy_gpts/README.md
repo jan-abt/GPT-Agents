@@ -24,7 +24,7 @@ you. Here you write it, so you can see exactly what is sent to the model.
 | 1. Culinary Companion with custom rules | Stage 1: instructions + chat (`app.py`) | ✅ done |
 | 4. Knowledge assistant from uploaded files | Stage 2: Calculus Made Easy with retrieval (`knowledge.py`) | ✅ done (keywords, and embeddings since chapter 8) |
 | 3. Custom action with FastAPI + ngrok | Stage 3: Task Organizer calls `../daily_tasks_api.py` through function calling (`actions.py`; local, no ngrok needed) | in progress |
-| 2. Data analysis with the code interpreter | Stage 4: running generated code | optional |
+| 2. Data analysis with the code interpreter | (not built: chapter 4 covers running generated code) | optional |
 | 5. Publish to the GPT Store | not possible; the code is on GitHub instead | — |
 
 What a small local model can't do, compared with ChatGPT:
@@ -210,3 +210,44 @@ tasks that look completely plausible. Always validate tool arguments.
 
 The Task Organizer's instruction to "create a plot" needs ChatGPT's code
 interpreter; a text model can only describe the plot.
+
+## Stage 4: memory
+
+Book: chapter 8, section 8.6 "Implementing memory in agentic systems"
+(p. 200–206), plus the de-duplication idea from 8.7 (p. 206).
+
+Knowledge is loaded in advance; **memory is written while you chat**, by an
+LLM, and recalled in later chats, by every GPT. `memory.py`:
+
+20. `extract_facts()`: the **memory function** (the book's listing 8.10). After
+    each answer, the LLM picks out lasting facts about you ("The user is
+    vegetarian."), returned as JSON.
+21. `add_memories()`: embeds the facts and stores them in
+    `.cache/memory.json` (gitignored), skipping near-duplicates of what's
+    already stored.
+22. `recall()`: before each answer, finds the stored facts closest to your
+    question.
+23. `add_memories_to_prompt()`: adds them to the system message as
+    "Remembered facts", to be used only where relevant.
+
+The sidebar has a **Use memory** switch and lists everything stored, with a
+**Forget everything** button. A **Memory** panel above an answer shows what was
+recalled, and "🧠 Remembered: …" below it shows what was just stored.
+
+Example, in two separate chats with the Culinary Companion:
+1. "I'm vegetarian and I love really spicy food. Suggest a quick lunch." →
+   🧠 Remembered: *The user is vegetarian and loves really spicy food.*
+2. New chat: "What should I cook for dinner tonight?" → recalls that fact →
+   a **spicy vegetarian stir-fry** (without memory: Chicken Alfredo).
+3. "What is 17 times 3?" → nothing recalled.
+
+**The tricky part is deciding what's relevant.** A question and a fact about
+you are worded very differently, so their similarity scores are close
+together: unrelated questions scored 0.37–0.44 against stored facts, related
+ones 0.52–0.62. `RELEVANT = 0.48` sits in between; the prompt tells the LLM
+to ignore recalled facts that don't fit. The book's 8.6.2 "semantic memory"
+improves this by having an LLM turn the input into questions before
+searching.
+
+Memory costs one extra LLM call per turn (plus embeddings): switch it off when
+you don't need it.
