@@ -21,7 +21,7 @@ talk to it with a list of role-tagged messages, and how you write them
 
 ## Walkthrough
 
-Start LM Studio (see the study guide). Each script runs inside `chapter_2`:
+Start LM Studio (see the [study guide](../README.md)). Each script runs inside `chapter_2`:
 ```bash
 (cd chapter_2 && python connecting.py)
 ```

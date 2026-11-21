@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start LM Studio's local server and load the models this repo uses.
-# See STUDY_GUIDE.md ("Before starting").
+# See README.md ("Before starting").
 #
 #   ./start_lmstudio.sh                         # chat model + embedding model
 #   ./start_lmstudio.sh llama-3.2-3b-instruct   # load other models instead
