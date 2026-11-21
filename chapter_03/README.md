@@ -24,7 +24,7 @@ in the app.
 ## Walkthrough (stage 1: instructions + chat)
 
 ```bash
-cd ~/Code/GPT-Agents && .venv/bin/streamlit run chapter_03/diy_gpts/app.py
+streamlit run chapter_03/diy_gpts/app.py
 ```
 (In IntelliJ: a Python run configuration with module `streamlit`, parameters
 `run app.py`, working directory `chapter_03/diy_gpts`.)
@@ -45,4 +45,4 @@ memory).
 
 ## Setup notes
 `diy_gpts/.env` (gitignored) holds the chat model and `EMBEDDING_MODEL`.
-Packages: `.venv/bin/pip install -r chapter_03/diy_gpts/requirements.txt`.
+Packages: `pip install -r chapter_03/diy_gpts/requirements.txt`.

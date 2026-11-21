@@ -21,10 +21,9 @@ talk to it with a list of role-tagged messages, and how you write them
 
 ## Walkthrough
 
-Start LM Studio (see the study guide), then run each script from this folder:
+Start LM Studio (see the study guide). Each script runs inside `chapter_2`:
 ```bash
-cd ~/Code/GPT-Agents/chapter_2
-~/Code/GPT-Agents/.venv/bin/python connecting.py
+(cd chapter_2 && python connecting.py)
 ```
 1. **`connecting.py`**: the smallest possible request, a system message plus
    one question ("What is the capital of France?").

@@ -33,14 +33,14 @@ structure (steps, fallbacks, retries), and its nodes can be LLM calls: an
 
 1. **`first_btree.py`** (6.1.3):
    ```bash
-   cd ~/Code/GPT-Agents && .venv/bin/python chapter_06/first_btree.py
+   python chapter_06/first_btree.py
    ```
    Selector → (has apple → eat apple) or (has pear → eat pear). It eats the
    apple every tick, because the selector stops at the first success. Change
    `HasApple` to `if False:` and the selector falls back to the pear.
 2. **`coding_challenge_abt.py`** (6.3.2, rebuilt for local models):
    ```bash
-   cd ~/Code/GPT-Agents && .venv/bin/python chapter_06/coding_challenge_abt.py
+   python chapter_06/coding_challenge_abt.py
    ```
    ```
    -^- Retry (3 attempts)                TODO 16
@@ -69,6 +69,6 @@ OpenAI's Assistants API (OpenAI-only and paid; OpenAI announced its retirement
 for 2026). The YouTube → X example (6.3.4) also needs an X account.
 
 ## Setup notes
-`.venv/bin/pip install py_trees` (under 1 MB). `chapter_06/.env` (gitignored)
+`pip install py_trees` (under 1 MB). `chapter_06/.env` (gitignored)
 sets the model; `qwen2.5-7b-instruct` works well. `--yes` skips the Verifier's
 question.

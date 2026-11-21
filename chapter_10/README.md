@@ -25,7 +25,7 @@ tells you what actually works.
 2. Run our comparison (four time-travel word problems with answers worked out
    by hand, checked by code):
    ```bash
-   cd ~/Code/GPT-Agents && .venv/bin/python chapter_10/reasoning_techniques.py   # ~25 min on a CPU
+   python chapter_10/reasoning_techniques.py   # ~25 min on a CPU
    ```
    `--quick` runs two problems. TODO 28 asks and extracts the number, 29 the
    single-call techniques, 30 chaining, 31 self-consistency (with votes), 32 the

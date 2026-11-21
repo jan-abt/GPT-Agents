@@ -29,7 +29,7 @@ decide.
    test requests), `flow.dag.yaml` (how the nodes connect).
 2. Run our plain-Python version, which uses those same files:
    ```bash
-   cd ~/Code/GPT-Agents && .venv/bin/python chapter_09/evaluate_profiles.py   # 4 requests, ~14 min on a CPU
+   python chapter_09/evaluate_profiles.py   # 4 requests, ~14 min on a CPU
    ```
    TODO 24 renders a Prompt Flow chat template into messages, TODO 25 asks a
    variant, TODO 26 is the judge (JSON with scores 1–5), TODO 27 runs the batch

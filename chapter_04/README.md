@@ -28,7 +28,7 @@ talk to each other matters.
 Every script's task is a snake game. **These agents run model-written code on
 your machine:** read it before pressing Enter.
 ```bash
-cd ~/Code/GPT-Agents/chapter_04 && ~/Code/GPT-Agents/.venv/bin/python autogen_start.py
+(cd chapter_04 && python autogen_start.py)
 ```
 1. **`autogen_start.py`**: user proxy + assistant. At the prompt, **Enter**
    runs the code in the last message, **text** sends feedback, **`exit`**
@@ -55,12 +55,12 @@ cd ~/Code/GPT-Agents/chapter_04 && ~/Code/GPT-Agents/.venv/bin/python autogen_st
 ## Setup notes
 - `pip install pyautogen` now installs Microsoft's rewritten AutoGen with a
   different API. Use the fork that kept the book's API:
-  `.venv/bin/pip install "ag2[openai]<1"`. Each script has one changed line:
+  `pip install "ag2[openai]<1"`. Each script has one changed line:
   `LLMConfig.from_json(path="OAI_CONFIG_LIST").config_list`.
 - `OAI_CONFIG_LIST` (gitignored) in this folder picks the model: copy
   `OAI_CONFIG_LIST.lmstudio.sample` and set `"model"` to `qwen2.5-7b-instruct`.
   For Gemini, use its `base_url` and your key; agent runs use many requests.
 - The snake game needs `pygame-ce` (`pygame` has no build for Python 3.14):
-  `.venv/bin/pip install pygame-ce`.
+  `pip install pygame-ce`.
 - Run from this folder (IntelliJ: working directory `chapter_04`), because
   `OAI_CONFIG_LIST` is looked up there. Generated code goes to `working/`.

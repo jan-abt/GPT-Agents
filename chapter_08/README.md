@@ -25,10 +25,9 @@ agent works.
 
 ## Walkthrough
 
-Load the embedding model first: `~/.lmstudio/bin/lms load text-embedding-nomic-embed-text-v1.5`
+The embedding model must be loaded (`./start_lmstudio.sh` does that). Each script runs inside `chapter_08`:
 ```bash
-cd ~/Code/GPT-Agents/chapter_08
-~/Code/GPT-Agents/.venv/bin/python document_vector_database.py
+(cd chapter_08 && python document_vector_database.py)
 ```
 1. **`document_vector_similarity.py`**: TF-IDF similarity of 8 sentences as a
    heatmap (opens in the browser).
@@ -60,7 +59,7 @@ a fact are worded differently, which is why the book's 8.6.2 has an LLM
 rephrase questions first.
 
 ## Setup notes
-`.venv/bin/pip install scikit-learn plotly chromadb` (about 142 MB).
+`pip install scikit-learn plotly chromadb` (about 142 MB).
 `chapter_08/.env` (gitignored) adds
 `EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5`; the two embedding
 scripts read it and `OPENAI_BASE_URL`. Not runnable on Python 3.14: the

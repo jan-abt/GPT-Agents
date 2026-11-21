@@ -26,7 +26,7 @@ result back.
 ## Walkthrough
 
 ```bash
-cd ~/Code/GPT-Agents/chapter_05 && ~/Code/GPT-Agents/.venv/bin/python first_function.py
+(cd chapter_05 && python first_function.py)
 ```
 1. **`first_function.py`**: one tool, two questions. The output is the *request*
    only (`Function(arguments=..., name='recommend')`). Note the invented
@@ -35,7 +35,7 @@ cd ~/Code/GPT-Agents/chapter_05 && ~/Code/GPT-Agents/.venv/bin/python first_func
    `tool` message → answer. Three items in one question needs three calls in
    one reply. Change the question to one item to see it with a weaker model.
 3. **`movie_recommender.py`** (from the repo root:
-   `.venv/bin/python chapter_05/movie_recommender.py`): section 5.4 without
+   `python chapter_05/movie_recommender.py`): section 5.4 without
    Semantic Kernel. TODO 10 native function (`seen_movies.txt`), TODO 11 the
    "kernel" filling `{{$input}}` and `{{SeenMoviesPlugin.LoadSeenMovies}}`,
    TODO 12 turning the book's `plugins/Recommender/Recommend_Movies` prompt
@@ -43,7 +43,7 @@ cd ~/Code/GPT-Agents/chapter_05 && ~/Code/GPT-Agents/.venv/bin/python first_func
 4. **DIY GPTs stage 3** (the chapter 3 custom action, done with this chapter's
    loop). Start the task API, then the app, and pick **Task Organizer**:
    ```bash
-   cd ~/Code/GPT-Agents/chapter_03 && ../.venv/bin/uvicorn daily_tasks_api:app --port 8100
+   (cd chapter_03 && uvicorn daily_tasks_api:app --port 8100)
    ```
    Read `diy_gpts/actions.py` TODOs 7–9; the **Actions** panel shows each call
    and its result. Compare <http://localhost:8100/docs>, the OpenAPI spec

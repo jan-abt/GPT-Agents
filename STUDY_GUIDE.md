@@ -28,7 +28,7 @@ description above the solution. In IntelliJ: **View → Tool Windows → TODO**
 **LM Studio** (the local LLM server): one script starts the server and loads
 the chat and embedding models, skipping anything already running:
 ```bash
-cd ~/Code/GPT-Agents && ./start_lmstudio.sh
+./start_lmstudio.sh
 ```
 It runs these steps (the embedding model is only needed for DIY GPTs and
 chapters 8 and 11):
@@ -44,7 +44,7 @@ a restart): run the script again.
 
 **When you're done**, free the memory (about 5 GB) with:
 ```bash
-cd ~/Code/GPT-Agents && ./stop_lmstudio.sh
+./stop_lmstudio.sh
 ```
 It unloads all models, stops the server and stops LM Studio's background
 service. If the LM Studio app is open, that service belongs to the app: quit
@@ -61,9 +61,15 @@ back.
 packages. **Settings:** each chapter has its own gitignored `.env` (chapter 4:
 `OAI_CONFIG_LIST`); `chapter_2/.env.example` is the template.
 
-**Run scripts from the repo root** unless a README says to `cd` into the
-chapter folder. Use `~/Code/GPT-Agents/.venv/bin/python`, not `../.venv/...`
-(the relative path prints harmless `sys.prefix` warnings).
+**All commands in the guides run from the repo root, with the venv active.**
+Once per terminal, in the repo folder (wherever you cloned it):
+```bash
+source .venv/bin/activate
+```
+Then `python`, `pip`, `streamlit` and `uvicorn` are the venv's. Scripts that
+must run inside their chapter folder are written as
+`(cd chapter_04 && python autogen_start.py)`: the parentheses bring you back
+to the root afterwards. In IntelliJ, the project's interpreter is this `.venv`.
 
 ## Suggested route for one session
 1. Chapters 1–2 (30 min): components; `connecting.py`, `message_history.py`,

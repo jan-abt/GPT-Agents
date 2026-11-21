@@ -25,8 +25,8 @@ UI, agent profiles, actions, later knowledge and memory); the book's is
 
 1. The two chat apps (they read `chapter_07/.env`):
    ```bash
-   cd ~/Code/GPT-Agents && .venv/bin/streamlit run chapter_07/chatgpt_clone_response.py
-   cd ~/Code/GPT-Agents && .venv/bin/streamlit run chapter_07/chatgpt_clone_streaming.py
+   streamlit run chapter_07/chatgpt_clone_response.py
+   streamlit run chapter_07/chatgpt_clone_streaming.py
    ```
    Compare the scripts: they differ only in how the reply arrives.
 2. Ask "Name the three primary colours", then "which two of them make

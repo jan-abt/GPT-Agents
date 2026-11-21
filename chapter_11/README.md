@@ -22,8 +22,8 @@ replan.
 ## Walkthrough
 
 ```bash
-cd ~/Code/GPT-Agents && .venv/bin/python chapter_11/planner.py
-cd ~/Code/GPT-Agents && .venv/bin/python chapter_11/planner.py "Find what Calculus Made Easy says about the letter d in dx, summarize it, and email the summary to my friend Alex."
+python chapter_11/planner.py
+python chapter_11/planner.py "Find what Calculus Made Easy says about the letter d in dx, summarize it, and email the summary to my friend Alex."
 ```
 ```
 goal  ──▶ PLANNER  (one LLM call → JSON plan)          TODO 34
