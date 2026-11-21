@@ -25,14 +25,22 @@ description above the solution. In IntelliJ: **View → Tool Windows → TODO**
 
 ## Before starting
 
-**LM Studio** (the local LLM server):
+**LM Studio** (the local LLM server): one script starts the server and loads
+the chat and embedding models, skipping anything already running:
+```bash
+cd ~/Code/GPT-Agents && ./start_lmstudio.sh
+```
+It runs these steps (the embedding model is only needed for DIY GPTs and
+chapters 8 and 11):
 ```bash
 ~/.lmstudio/bin/lms server start
 ~/.lmstudio/bin/lms load qwen2.5-7b-instruct --yes
-~/.lmstudio/bin/lms load text-embedding-nomic-embed-text-v1.5 --yes   # chapters 3 (DIY GPTs), 8, 11
+~/.lmstudio/bin/lms load text-embedding-nomic-embed-text-v1.5 --yes
 ```
+Don't run `lms load` for a model that's already loaded: it starts a second
+copy (`qwen2.5-7b-instruct:2`) using the memory twice; `lms unload` removes it.
 If a script says "Connection error", the server isn't running (it stops after
-a restart).
+a restart): run the script again.
 
 | Model | Used for |
 |---|---|
