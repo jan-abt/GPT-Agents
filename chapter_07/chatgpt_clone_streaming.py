@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -9,7 +10,7 @@ st.title("ChatGPT-like clone")
 client = OpenAI()
 
 if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-4-1106-preview"
+    st.session_state["openai_model"] = os.getenv("OPENAI_MODEL", "gpt-4-1106-preview")
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []

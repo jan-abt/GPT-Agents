@@ -1,3 +1,4 @@
+import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -7,7 +8,7 @@ load_dotenv()  # loading and setting the api key can be done in one step
 
 # Example function to query ChatGPT
 def prompt_llm(messages, 
-               model="gpt-4-1106-preview", 
+               model=os.getenv("OPENAI_MODEL", "gpt-4-1106-preview"), 
                base_url=None, 
                api_key=""):
     if base_url:

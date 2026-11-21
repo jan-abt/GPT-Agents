@@ -3,12 +3,13 @@ from autogen import (
     GroupChat,
     GroupChatManager,
     UserProxyAgent,
-    config_list_from_json,
+    LLMConfig,
 )
 from autogen.cache import Cache
 
 # Load the configuration list from the config file.
-config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
+# (AG2 0.14 replaced config_list_from_json() with LLMConfig.from_json().)
+config_list = LLMConfig.from_json(path="OAI_CONFIG_LIST").config_list
 
 # Create the agent that represents the user in the conversation.
 user_proxy = UserProxyAgent(
@@ -18,7 +19,9 @@ user_proxy = UserProxyAgent(
         "use_docker": False,
         "last_n_messages": 3,
     },
-    human_input_mode="NEVER",
+    # The book uses "NEVER": generated code then runs without asking, for up
+    # to 20 rounds. "ALWAYS" lets you read each step before it runs.
+    human_input_mode="ALWAYS",
 )
 
 llm_config = {"config_list": config_list}

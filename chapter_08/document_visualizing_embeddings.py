@@ -11,9 +11,13 @@ api_key = os.getenv('OPENAI_API_KEY')
 # Ensure the API key is available
 if not api_key:
     raise ValueError("No API key found. Please check your .env file.")
-client = OpenAI(api_key=api_key)
+# OPENAI_BASE_URL from .env points the client at LM Studio (or Gemini); without it,
+# it talks to OpenAI as in the book.
+client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL"))
 
-def get_embedding(text, model="text-embedding-ada-002"):
+# EMBEDDING_MODEL from .env, e.g. LM Studio's text-embedding-nomic-embed-text-v1.5;
+# the book uses OpenAI's text-embedding-ada-002.
+def get_embedding(text, model=os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")):
     text = text.replace("\n", " ")
     return client.embeddings.create(input = [text], model=model).data[0].embedding
 

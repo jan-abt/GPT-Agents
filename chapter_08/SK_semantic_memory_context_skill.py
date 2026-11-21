@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import asyncio
 from typing import Tuple
 import uuid
@@ -24,7 +29,7 @@ if useAzureOpenAI:
     kernel.add_text_embedding_generation_service("ada", azure_text_embedding)
 else:
     api_key, _ = sk.openai_settings_from_dot_env()
-    oai_chat_service = OpenAIChatCompletion(ai_model_id="gpt-4-1106-preview", api_key=api_key)
+    oai_chat_service = OpenAIChatCompletion(ai_model_id=os.getenv("OPENAI_MODEL", "gpt-4-1106-preview"), api_key=api_key)
     oai_text_embedding = OpenAITextEmbedding(ai_model_id="text-embedding-ada-002", api_key=api_key)
     kernel.add_chat_service("chat-gpt", oai_chat_service)
     kernel.add_text_embedding_generation_service("ada", oai_text_embedding)
