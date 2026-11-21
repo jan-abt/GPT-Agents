@@ -30,6 +30,11 @@ description above the solution. In IntelliJ: **View → Tool Windows → TODO**
 
 ## Before starting
 
+> **First time?** You need Python with the project's packages, **LM Studio**
+> and the **Qwen** model. See
+> [Installing the prerequisites (Linux and Mac)](#installing-the-prerequisites-linux-and-mac)
+> at the end of this page.
+
 **LM Studio** (the local LLM server): one script starts the server and loads
 the chat and embedding models, skipping anything already running:
 ```bash
@@ -94,6 +99,81 @@ to the root afterwards. In IntelliJ, the project's interpreter is this `.venv`.
 - Models differ in what they were trained for (tool calls, code).
 - Fluent isn't correct: check with code wherever you can.
 - Structure (JSON schemas, trees, plans) makes small models reliable.
+
+## Installing the prerequisites (Linux and Mac)
+
+Everything here is free. Downloads are large (about 7.5 GB in total), so the
+model commands below can resume after an interrupted connection.
+
+### 1. Python and the packages
+Python 3.12 or newer (this repo was tested with 3.14).
+- **Linux (Ubuntu/Debian):** `sudo apt install python3 python3-venv`
+- **Mac:** install Python from [python.org](https://www.python.org/downloads/)
+  or with Homebrew: `brew install python`
+
+Then, in the repo folder, create the virtual environment and install
+everything the chapters use (118 packages, about 280 MB):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install openai python-dotenv streamlit pypdf numpy fastapi uvicorn requests "ag2[openai]<1" pygame-ce py_trees scikit-learn plotly chromadb
+```
+(Each chapter README also lists just the packages that chapter needs.)
+
+### 2. LM Studio
+- **Linux:** download the `.deb` from [lmstudio.ai](https://lmstudio.ai/download)
+  and install it: `sudo apt install ./LM-Studio-*.deb` (an AppImage is offered too).
+- **Mac (Apple Silicon):** download the `.dmg` from
+  [lmstudio.ai](https://lmstudio.ai/download) and drag LM Studio into Applications.
+
+Start LM Studio once: that installs its command-line tool at
+`~/.lmstudio/bin/lms`, which the scripts use. The embedding model
+(`text-embedding-nomic-embed-text-v1.5`) comes with LM Studio.
+
+### 3. The models
+| Model | File (Q4_K_M GGUF) | Size | Needed? |
+|---|---|---|---|
+| `qwen2.5-7b-instruct` | `bartowski/Qwen2.5-7B-Instruct-GGUF` | 4.7 GB | yes |
+| `llama-3.2-3b-instruct` | `bartowski/Llama-3.2-3B-Instruct-GGUF` | 2.0 GB | optional (quick tests) |
+
+**Simplest:** let LM Studio download it, and choose the `Q4_K_M` file when asked:
+```bash
+~/.lmstudio/bin/lms get --select https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF
+```
+(Or use the search in LM Studio's app.)
+
+**On an unreliable connection:** download with `curl`, which resumes where it
+stopped; rerun the same command after an interruption. Linux:
+```bash
+mkdir -p ~/.lmstudio/models/bartowski/Qwen2.5-7B-Instruct-GGUF && cd ~/.lmstudio/models/bartowski/Qwen2.5-7B-Instruct-GGUF && F=Qwen2.5-7B-Instruct-Q4_K_M.gguf && until [ "$(stat -c%s "$F" 2>/dev/null)" = 4683074240 ]; do curl -L -C - --connect-timeout 60 --speed-limit 1000 --speed-time 120 -o "$F" "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/$F" || sleep 30; done
+```
+Mac (same, but its `stat` is written `stat -f%z`):
+```bash
+mkdir -p ~/.lmstudio/models/bartowski/Qwen2.5-7B-Instruct-GGUF && cd ~/.lmstudio/models/bartowski/Qwen2.5-7B-Instruct-GGUF && F=Qwen2.5-7B-Instruct-Q4_K_M.gguf && until [ "$(stat -f%z "$F" 2>/dev/null)" = 4683074240 ]; do curl -L -C - --connect-timeout 60 --speed-limit 1000 --speed-time 120 -o "$F" "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/$F" || sleep 30; done
+```
+For Llama, replace `Qwen2.5-7B-Instruct` with `Llama-3.2-3B-Instruct` in the
+folder and file names, and `4683074240` with `2019377696`.
+
+Check that a download is complete and undamaged (`sha256sum` on Linux,
+`shasum -a 256` on Mac):
+
+| File | SHA-256 |
+|---|---|
+| `Qwen2.5-7B-Instruct-Q4_K_M.gguf` | `65b8fcd92af6b4fefa935c625d1ac27ea29dcb6ee14589c55a8f115ceaaa1423` |
+| `Llama-3.2-3B-Instruct-Q4_K_M.gguf` | `6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff` |
+
+**On a Mac,** LM Studio also offers faster **MLX** versions of these models.
+They show up under a different name; put the name `lms ls` shows into your
+`.env` files as `OPENAI_MODEL`.
+
+### 4. Check
+```bash
+./start_lmstudio.sh
+~/.lmstudio/bin/lms ls
+```
+`lms ls` should list `qwen2.5-7b-instruct` and
+`text-embedding-nomic-embed-text-v1.5`. Then create the chapters' `.env` files
+from `chapter_2/.env.example`, as described in "Before starting".
 
 ## About the book
 *AI Agents in Action* (Manning Publications) explores agents and assistants
