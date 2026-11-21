@@ -42,6 +42,15 @@ copy (`qwen2.5-7b-instruct:2`) using the memory twice; `lms unload` removes it.
 If a script says "Connection error", the server isn't running (it stops after
 a restart): run the script again.
 
+**When you're done**, free the memory (about 5 GB) with:
+```bash
+cd ~/Code/GPT-Agents && ./stop_lmstudio.sh
+```
+It unloads all models, stops the server and stops LM Studio's background
+service. If the LM Studio app is open, that service belongs to the app: quit
+the app to stop it. Nothing is deleted; `./start_lmstudio.sh` brings it all
+back.
+
 | Model | Used for |
 |---|---|
 | `qwen2.5-7b-instruct` (4.7 GB) | the all-rounder: chat, tool calls, code, judging |
